@@ -13,6 +13,11 @@ let read_lines name : string list =
 let sum = List.fold_left (+) 0
 let product = List.fold_left ( * ) 1
 
+let all = List.fold_left (&&) true
+let any = List.fold_left (||) false
+
+let minimum (x :: xs) = List.fold_left min x xs
+let maximum (x :: xs) = List.fold_left max x xs
 
 let explode_string s : char list = List.init (String.length s) (String.get s)
 
