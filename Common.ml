@@ -1,3 +1,5 @@
+let input_file default = if Array.length Sys.argv > 1 then Sys.argv.(1) else default
+
 let read_lines name : string list =
     let ic = open_in name in
     let try_read () =
