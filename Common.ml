@@ -1,5 +1,7 @@
 let input_file default = if Array.length Sys.argv > 1 then Sys.argv.(1) else default
 
+let (<<) f g x = f (g x)
+
 let read_lines name : string list =
     let ic = open_in name in
     let try_read () =
@@ -25,10 +27,19 @@ let reverse_string s =
     let len = String.length s in
     String.init len (fun i -> s.[len - 1 - i])
 
+let non_empty_strings = List.filter ((<>) 0 << String.length)
+
+
+let rec power a = function
+    | 0 -> 1
+    | 1 -> a
+    | n -> 
+        let b = power a (n / 2) in
+        b * b * (if n mod 2 = 0 then 1 else a) 
+
 
 let nvl l r = if Option.is_some l then l else r
 
-let (<<) f g x = f (g x)
 let on_fst f (l, r) = (f l, r)
 let on_snd f (l, r) = (l, f r)
 
