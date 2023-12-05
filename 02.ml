@@ -28,7 +28,7 @@ let game_power (_, draws) =
     let b = maximum @@ List.map trd3 draws in
     r * g * b
 
-let lines = read_lines @@ input_file "02.input"
+let lines = read_lines @@ input_file
 let games = List.map parse_game lines
 
 let possible_games = List.filter (is_possible_game (12, 13, 14)) games

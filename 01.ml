@@ -17,7 +17,7 @@ let find_digits digits_map line : int =
     let d2 = find_digit reverse_digits_map @@ reverse_string line in
     d1 * 10 + d2
 
-let lines = read_lines @@ input_file "01.input"
+let lines = read_lines @@ input_file
 
 let ds = sum @@ List.map (find_digits []) lines
 let () = printf "%d\n" ds

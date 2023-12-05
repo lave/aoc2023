@@ -24,7 +24,7 @@ let add_cards (i, counts) card =
     (i + 1, counts_)
 
 
-let lines = read_lines @@ input_file "04.input"
+let lines = read_lines @@ input_file
 let cards = List.map parse_card lines
 
 let sum_of_points = sum @@ List.map points cards
