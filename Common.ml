@@ -73,6 +73,11 @@ let reverse_string s =
 
 let non_empty_strings = List.filter ((<>) 0 << String.length)
 
+let drop_char c s =
+    let b = Buffer.create (String.length s) in
+    let () = String.iter (fun c_ -> if c_ <> c then Buffer.add_char b c_) s in
+    Buffer.contents b
+
 
 (* input functions *)
 
