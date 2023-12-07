@@ -5,7 +5,7 @@ module IntMap = Map.Make(Int)
 
 (* add . in the end of each line to make sure we always have some chartacter after the number -
    this allows to skit the code for checking cases when number is at the end of the row *)
-let lines = List.map (fun line -> explode_string (line ^ ".")) @@ read_lines input_file
+let lines = List.map (fun line -> to_chars (line ^ ".")) @@ read_lines input_file
 let h = List.length lines
 let w = List.length @@ List.hd lines
 

@@ -11,6 +11,7 @@ let fst3 (l, _, _) = l
 let snd3 (_, m, _) = m
 let trd3 (_, _, r) = r
 
+let rcompare x y = compare y x
 
 (* control functions *)
 
@@ -37,6 +38,14 @@ let any = List.fold_left (||) false
 
 let minimum (x :: xs) = List.fold_left min x xs
 let maximum (x :: xs) = List.fold_left max x xs
+
+let take n l =
+    let rec take_ n l acc =
+        if n = 0 || List.is_empty l
+            then List.rev acc
+            else take_ (n - 1) (List.tl l) (List.hd l :: acc)
+    in
+    take_ n l []
 
 let split_by is_separator =
     let rec split dst src =
@@ -65,7 +74,7 @@ let split_by_count n =
 
 (* string functions *)
 
-let explode_string s : char list = List.init (String.length s) (String.get s)
+let to_chars s = List.of_seq @@ String.to_seq s
 
 let reverse_string s =
     let len = String.length s in
@@ -77,6 +86,8 @@ let drop_char c s =
     let b = Buffer.create (String.length s) in
     let () = String.iter (fun c_ -> if c_ <> c then Buffer.add_char b c_) s in
     Buffer.contents b
+
+let replace c1 c2 s = String.map (fun c -> if c = c1 then c2 else c) s
 
 
 (* input functions *)
