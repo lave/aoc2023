@@ -27,8 +27,20 @@ let rec power a = function
         let b = power a (n / 2) in
         b * b * (if n mod 2 = 0 then 1 else a) 
 
+let rec gcd a b =
+    if b <> 0
+        then gcd b (a mod b)
+        else abs a
+
+let lcm a b =
+    match a, b with
+        | 0, _ | _, 0 -> 0
+        | a, b -> abs (a * b) / (gcd a b)
+
 
 (* list functions *)
+
+let fold_left1 f l = List.fold_left f (List.hd l) (List.tl l)
 
 let sum = List.fold_left (+) 0
 let product = List.fold_left ( * ) 1
