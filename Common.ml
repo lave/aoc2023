@@ -17,6 +17,9 @@ let rcompare x y = compare y x
 
 let (<<) f g x = f (g x)
 
+let rec repeat f acc = function
+    | 1 -> acc
+    | n -> repeat f (f acc) (n - 1)
 
 (* math functions *)
 
@@ -59,6 +62,11 @@ let take n l =
     in
     take_ n l []
 
+let rec drop n l =
+    if n == 0 || l == [] then l
+    else drop (n - 1) (List.tl l)
+
+
 let split_by is_separator =
     let rec split dst src =
         if List.is_empty src
@@ -88,6 +96,11 @@ let split_by_count n =
 
 let to_chars s = List.of_seq @@ String.to_seq s
 
+let string_of_chars chars =
+  let buf = Buffer.create 16 in
+  List.iter (Buffer.add_char buf) chars;
+  Buffer.contents buf
+
 let reverse_string s =
     let len = String.length s in
     String.init len (fun i -> s.[len - 1 - i])
@@ -114,3 +127,36 @@ let read_lines name : string list =
         | Some s -> loop (s :: acc)
         | None -> close_in ic; List.rev acc in
     loop []
+
+
+(* print funtcions *)
+
+let print_ints title ns =
+    let () = if title <> "" then Printf.printf "%s: " title else () in
+    let () = List.iter (Printf.printf "%d, ") ns in
+    Printf.printf "\n"
+
+let print_chars title cs =
+    let () = if title <> "" then Printf.printf "%s: " title else () in
+    let () = List.iter (Printf.printf "%c, ") cs in
+    Printf.printf "\n"
+
+let print_strs title ss =
+    let () = if title <> "" then Printf.printf "%s: " title else () in
+    let () = List.iter (Printf.printf "%s, ") ss in
+    Printf.printf "\n"
+
+(* memoization *)
+
+let memoize f =
+    let memo = Hashtbl.create 1000 in
+
+    fun x ->
+        let memoized = Hashtbl.find_opt memo x in
+        if Option.is_some memoized then
+            Option.get memoized
+        else
+            let r = f x in
+            let () = Hashtbl.add memo x r in
+            r
+
