@@ -11,8 +11,7 @@ let print_pattern (map, w, h) =
     let () = printf "%d x %x\n" w h in
     Array.iter (fun l -> printf "%s\n" @@ string_of_chars @@ Array.to_list l) map
 
-let transpose (map, w, h) =
-    (Array.of_list @@ List.init w (fun y -> Array.of_list @@ List.init h (fun x -> map.(x).(y))), h, w)
+let transpose (map, w, h) = (Common.transpose map, h, w)
 
 
 let find_mirror_vertical smudges_count (map, w, h) =
@@ -66,7 +65,7 @@ let find_mirror_vertical smudges_count (map, w, h) =
     note
 
 
-let find_mirror_horizontal smudges_count pattern = 
+let find_mirror_horizontal smudges_count pattern =
     Option.map (( * ) 100) @@ find_mirror_vertical smudges_count @@ transpose pattern
 
 let find_mirror smudges_count pattern =

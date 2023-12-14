@@ -41,6 +41,29 @@ let lcm a b =
         | a, b -> abs (a * b) / (gcd a b)
 
 
+(* matrix functions *)
+
+let transpose m =
+    let h = Array.length m in
+    let w = Array.length m.(0) in
+    Array.init w (fun y -> Array.init h (fun x -> m.(x).(y)))
+
+let anti_transpose m =
+    let h = Array.length m in
+    let w = Array.length m.(0) in
+    Array.init w (fun y -> Array.init h (fun x -> m.(h - x - 1).(w - y - 1)))
+
+let mirror_h m =
+    let h = Array.length m in
+    let w = Array.length m.(0) in
+    Array.init h (fun y -> Array.init w (fun x -> m.(y).(w - x - 1)))
+
+let mirror_v m =
+    let h = Array.length m in
+    let w = Array.length m.(0) in
+    Array.init h (fun y -> Array.init w (fun x -> m.(h - y - 1).(x)))
+
+
 (* list functions *)
 
 let fold_left1 f l = List.fold_left f (List.hd l) (List.tl l)
