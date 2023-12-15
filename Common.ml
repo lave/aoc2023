@@ -114,6 +114,20 @@ let split_by_count n =
     in
     split 0 [[]]
 
+(* there's List.delete_assoc but no List.put_assoc *)
+let put_assoc label l value =
+    let rec put ls =
+        if ls = []
+            then [(label, value)]
+        else
+            let l :: ls_ = ls in
+            if fst l = label then
+                (label, value) :: ls_
+            else
+                l :: put ls_
+    in
+    put l
+
 
 (* string functions *)
 
