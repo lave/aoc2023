@@ -2,3 +2,5 @@
 *.cmi
 *.cmx
 [0-9][0-9]
+.aoc-cookie
+*.json
