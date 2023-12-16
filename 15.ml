@@ -32,6 +32,7 @@ let sum_of_cmd_hashes = sum @@ List.map hash cmds
 let () = printf "%d\n" @@ sum_of_cmd_hashes
 
 let hashmap = run_commands cmds
-let focusing_power = sum @@ Array.to_list @@ Array.mapi (fun box_number lenses ->
-    (box_number + 1) * (sum @@ List.mapi (fun slot_number (_, focal_length) -> (slot_number + 1) * focal_length) lenses)) hashmap
+let focusing_power = sum_a @@ Array.mapi (fun box_number lenses ->
+    (box_number + 1) * (sum @@ List.mapi (fun slot_number (_, focal_length) -> (slot_number + 1) * focal_length) lenses)
+) hashmap
 let () = printf "%d\n" focusing_power

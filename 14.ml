@@ -59,9 +59,9 @@ let cycle = tilt_right << tilt_down << tilt_left << tilt_up
 let weight platform =
     let h = Array.length platform in
     let weight_row y row =
-        sum @@ Array.to_list @@ Array.map (fun c -> if c = 'O' then (h - y) else 0) row
+        sum_a @@ Array.map (fun c -> if c = 'O' then (h - y) else 0) row
     in
-    sum @@ Array.to_list @@ Array.mapi weight_row platform
+    sum_a @@ Array.mapi weight_row platform
 
 
 (* returns pair (loop_start, loop_period) *)

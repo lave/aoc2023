@@ -31,5 +31,5 @@ let sum_of_points = sum @@ List.map points cards
 let () = printf "%d\n" sum_of_points
 
 let (_, counts) = List.fold_left add_cards (0, Array.make (List.length cards) 1) cards
-let sum_of_cards = sum @@ Array.to_list counts
+let sum_of_cards = sum_a counts
 let () = printf "%d\n" sum_of_cards

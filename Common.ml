@@ -64,6 +64,12 @@ let mirror_v m =
     Array.init h (fun y -> Array.init w (fun x -> m.(h - y - 1).(x)))
 
 
+(* array functions *)
+
+let sum_a = Array.fold_left (+) 0
+let product_a = Array.fold_left ( * ) 1
+
+
 (* list functions *)
 
 let fold_left1 f l = List.fold_left f (List.hd l) (List.tl l)
