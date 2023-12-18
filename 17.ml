@@ -30,7 +30,7 @@ let code (x, y, d, l) =
         | Left  -> 2
         | Right -> 3
     in
-    (y*1000 + x)*16 + d_ * 4 + l
+    (y*1000 + x)*44 + d_ * 11 + l
 
 let straight (x, y, d, l) =
     match d with
@@ -86,7 +86,7 @@ let find_path_ (map, w, h) p0 =
     Option.get @@ find p0 IntSet.empty 0
 
 
-let find_path (map, w, h) p0 =
+let find_path_1 (map, w, h) p0 =
     let move p =
         let (x, y, d, l) = p in
         (*let () = printf "can move %d, %d, %s, %d\n" x y (code_str d) l in*)
@@ -103,15 +103,15 @@ let find_path (map, w, h) p0 =
 
     let rec find frontier visited r =
         let (can_move, cant_move) = List.partition (fun x -> (snd x) = 0) frontier in
-        let () = printf "frontier %d, visited %d, r=%d, can  move %d\n" (List.length frontier) (IntSet.cardinal visited) r (List.length can_move) in
+        let () = printf "frontier %d, visited %d, r=%d, can  move %d\n%!" (List.length frontier) (IntSet.cardinal visited) r (List.length can_move) in
         let end_ = List.find_opt (fun ((x, y, _, _), _) -> x = w-1 && y = h-1) can_move in
         if Option.is_some end_ then
             r
         else
             let moved = List.concat @@ List.map (fun (p, _) -> move p) can_move in
-            (*let moved_ = List.filter (fun x -> not @@ IntSet.mem (code x) visited) moved in*)
+            let moved_ = List.filter (fun (p, _) -> not @@ IntSet.mem (code p) visited) moved in
             let cant_move_ = List.map (fun (p, w) -> (p, w-1)) cant_move in
-            let l1 = List.sort_uniq (fun x y -> compare (fst x) (fst y)) moved in
+            let l1 = List.sort_uniq (fun x y -> compare (fst x) (fst y)) moved_ in
             let l2 = cant_move_ in (* already sorted *)
             let frontier_ = List.merge (fun x y -> compare (fst x) (fst y)) l1 l2 in
             let visited_ = List.fold_left (fun acc x -> IntSet.add (code (fst x)) acc) visited can_move in
@@ -119,6 +119,109 @@ let find_path (map, w, h) p0 =
     in
     find [(p0, 0)] IntSet.empty 0
 
+
+let find_path_2 (map, w, h) p0 =
+    let move p =
+        let (x, y, d, l) = p in
+        (*let () = printf "can move %d, %d, %s, %d\n" x y (code_str d) l in*)
+        let moves = if l > 3 then
+            [turn_left p; turn_right p]
+        else
+            []
+        in
+        let moves_ = if l < 10 then
+            (straight p) :: moves
+        else
+            moves
+        in
+        let moves__ = List.filter (fun (x_, y_, _, _) -> x_ >= 0 && x_ < w && y_ >= 0 && y_ < h) moves_ in
+        (*let () = printf "valid moves: %d\n" @@ List.length moves__ in*)
+        List.map (fun p -> let (x_, y_, _, _) = p in (p, map.(y_).(x_) - 1)) moves__
+    in
+
+    let rec find frontier visited r =
+        let (can_move, cant_move) = List.partition (fun x -> (snd x) = 0) frontier in
+        let () = printf "frontier %d, visited %d, r=%d, can move %d\n%!" (List.length frontier) (IntSet.cardinal visited) r (List.length can_move) in
+        let end_ = List.find_opt (fun ((x, y, _, _), _) -> x = w-1 && y = h-1) can_move in
+        if Option.is_some end_ then
+            r
+        else
+            let moved = List.concat @@ List.map (fun (p, _) -> move p) can_move in
+            let moved_ = List.filter (fun (p, _) -> not @@ IntSet.mem (code p) visited) moved in
+            let cant_move_ = List.map (fun (p, w) -> (p, w-1)) cant_move in
+            let l1 = List.sort_uniq (fun x y -> compare (fst x) (fst y)) moved_ in
+            let l2 = cant_move_ in (* already sorted *)
+            let frontier_ = List.merge (fun x y -> compare (fst x) (fst y)) l1 l2 in
+            let visited_ = List.fold_left (fun acc x -> IntSet.add (code (fst x)) acc) visited can_move in
+            let () = printf "\n" in
+            find frontier_ visited_ (r+1)
+    in
+    find [(p0, 0)] IntSet.empty 0
+
+
+let find_path (map, w, h) p0 =
+    (*
+    let move p =
+        let (x, y, d, l) = p in
+        (*let () = printf "can move %d, %d, %s, %d\n" x y (code_str d) l in*)
+        let moves = [turn_left p; turn_right p] in
+        let moves_ = if l < 3 then
+            (straight p) :: moves
+        else
+            moves
+        in
+        let moves__ = List.filter (fun (x_, y_, _, _) -> x_ >= 0 && x_ < w && y_ >= 0 && y_ < h) moves_ in
+        (*let () = printf "valid moves: %d\n" @@ List.length moves__ in*)
+        List.map (fun p -> let (x_, y_, _, _) = p in (p, map.(y_).(x_) - 1)) moves__
+    in
+    *)
+
+    let move p =
+        let (x, y, d, l) = p in
+        (*let () = printf "can move %d, %d, %s, %d\n" x y (code_str d) l in*)
+        let moves = if l > 3 then
+            [turn_left p; turn_right p]
+        else
+            []
+        in
+        let moves_ = if l < 10 then
+            (straight p) :: moves
+        else
+            moves
+        in
+        let moves__ = List.filter (fun (x_, y_, _, _) -> x_ >= 0 && x_ < w && y_ >= 0 && y_ < h) moves_ in
+        (*let () = printf "valid moves: %d\n" @@ List.length moves__ in*)
+        List.map (fun p -> let (x_, y_, _, _) = p in (p, map.(y_).(x_) - 1)) moves__
+    in
+
+    let rec find frontier visited r =
+        let can_move = List.of_seq @@ Seq.filter (fun x -> (snd x) = 0) @@ Hashtbl.to_seq frontier in
+        let () = printf "Frontier %d, visited %d, r=%d, can move %d\n%!" (Hashtbl.length frontier) (Hashtbl.length visited) r (List.length can_move) in
+        let end_ = List.find_opt (fun ((x, y, _, l), _) -> x = w-1 && y = h-1 && l > 3) can_move in
+        if Option.is_some end_ then
+            r
+        else
+            let () = Hashtbl.filter_map_inplace (fun _ w -> if w <= 0 then None else Option.some (w-1)) frontier in
+            let moved = List.concat @@ List.map (fun (p, _) -> move p) can_move in
+            let moved_ = List.filter (fun (p, _) -> not @@ Hashtbl.mem visited p) moved in
+            let () = List.iter (fun (p, w) ->
+                let found = Hashtbl.find_opt frontier p in
+                if Option.is_none found then
+                    Hashtbl.add frontier p w
+                else if w < Option.get found then
+                    Hashtbl.replace frontier p w
+                else
+                    ()
+            ) moved_ in
+            (*let visited_ = List.fold_left (fun acc x -> IntSet.add (code (fst x)) acc) visited can_move in*)
+            let () = List.iter (fun x -> Hashtbl.add visited (fst x) 1) can_move in
+            find frontier visited (r+1)
+    in
+    let frontier = Hashtbl.create 1000000 in
+    let () = Hashtbl.add frontier p0 0 in
+    find frontier (Hashtbl.create 1000000) 0
+
 let city = parse_city @@ read_lines @@ input_file
+let heat_loss = find_path city (0, 0, Down, 0)
 let heat_loss = find_path city (0, 0, Right, 0)
 let () = printf "%d\n" heat_loss
