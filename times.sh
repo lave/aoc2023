@@ -13,6 +13,7 @@ if [ -z "$(find . -name $FILE -mmin -60)" ]; then
 
     echo "Downloading $FILE..."
 
+    unset https_proxy
     curl -sf -b "$AOC_COOKIE"  https://adventofcode.com/2023/leaderboard/private/view/$FILE -o $FILE \
         && [ -s $FILE ] || { echo "Failed to download file $FILE from AoC website - AoC cookie is incorrect or expired?"; exit 1; }
 fi

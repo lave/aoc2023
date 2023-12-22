@@ -23,6 +23,8 @@ let rec repeat f acc = function
 
 (* math functions *)
 
+let sqr x = x * x
+
 let rec power a = function
     | 0 -> 1
     | 1 -> a
@@ -134,6 +136,8 @@ let put_assoc label l value =
     in
     put l
 
+let remove n ns =
+    List.filter ((!=) n) ns
 
 (* string functions *)
 
