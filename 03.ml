@@ -42,7 +42,7 @@ let scan_position (found, x, y, n, adjacent) c =
     let x_ = x+1 in
     if c >= '0' && c <= '9' then
         (*let () = printf "Found digit %d,%d = %c\n" x y c in*)
-        (found, x_, y, n * 10 + Char.code c - Char.code '0', if Option.is_none adjacent then find_adjacent x y else adjacent)
+        (found, x_, y, n * 10 + (int_of_char c), if Option.is_none adjacent then find_adjacent x y else adjacent)
     else
         if n > 0 then
             (*let () = printf "Found number %n, adjacent = %b\n" n (Option.is_some adjacent) in*)

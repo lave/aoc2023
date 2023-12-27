@@ -161,6 +161,8 @@ let drop_char c s =
 
 let replace c1 c2 s = String.map (fun c -> if c = c1 then c2 else c) s
 
+let int_of_char c = Char.code c - Char.code '0'
+
 
 (* input functions *)
 

@@ -4,40 +4,41 @@ open Printf
 module IntSet = Set.Make(Int)
 
 
-let parse_city lines =
-    let h = List.length lines in
-    let w = String.length (List.hd lines) in
-    let map = Array.of_list @@ List.map (Array.of_list << (List.map (fun c -> Char.code c - Char.code '0')) << to_chars) lines in
-    (map, w, h)
-
-
 type direction =
     | Up
     | Down
     | Left
     | Right
-
-let code_str = function
+let show_direction = function
     | Up    -> "up"
     | Down  -> "down"
     | Left  -> "left"
     | Right -> "right"
 
-let code (x, y, d, l) =
+
+let parse_city lines =
+    let h = List.length lines in
+    let w = String.length (List.hd lines) in
+    let map = Array.of_list @@ List.map (Array.of_list << (List.map int_of_char) << to_chars) lines in
+    (map, w, h)
+
+let idx (x, y, d, n) =
     let d_ = match d with
         | Up    -> 0
         | Down  -> 1
         | Left  -> 2
         | Right -> 3
     in
-    (y*1000 + x)*44 + d_ * 11 + l
+    (* x and y are less than 200, there's also 4 directions and 11 values for amount if consequtive moves in this
+       direction - so these coefficients guarantee unique values for all possible coordinates *)
+    ((y * 200 + x) * 4 + d_) * 11 + n
 
-let straight (x, y, d, l) =
+let forward (x, y, d, n) =
     match d with
-        | Up    -> (x,     y - 1, Up,    l + 1)
-        | Down  -> (x,     y + 1, Down,  l + 1)
-        | Left  -> (x - 1, y,     Left,  l + 1)
-        | Right -> (x + 1, y,     Right, l + 1)
+        | Up    -> (x,     y - 1, Up,    n + 1)
+        | Down  -> (x,     y + 1, Down,  n + 1)
+        | Left  -> (x - 1, y,     Left,  n + 1)
+        | Right -> (x + 1, y,     Right, n + 1)
 
 let turn_left (x, y, d, _) =
     match d with
@@ -53,175 +54,65 @@ let turn_right (x, y, d, _) =
         | Left  -> (x,     y - 1, Up,    1)
         | Right -> (x,     y + 1, Down,  1)
 
-let find_path_ (map, w, h) p0 =
-    let rec find p visited r =
-        let (x, y, d, l) = p in
-        (*let () = printf "At pos %d, %d moving to %s (%d), loss %d\n" x y (code_str d) l r in*)
-        if x < 0 || x >= w || y < 0 || y >= h then
-            None
-        else
-            let cod = code p in
-            if IntSet.mem cod visited then
-                (*let () = printf "already visited\n" in*)
-                None
-            else
-                let r_ = r + map.(y).(x) in
-                if x = w-1 && y = h-1 then
-                    Some r_
-                else
-                    let visited_ = IntSet.add cod visited in
-                    let moves = [turn_left p; turn_right p] in
-                    let moves_ = if l < 3 then
-                        (straight p) :: moves
-                    else
-                        moves
-                    in
-                    let results = List.map (fun p_ -> find p_ visited_ r_) moves_ in
-                    let rs = List.map Option.get @@ List.filter Option.is_some results in
-                    if rs = [] then
-                        None 
-                    else
-                        Option.some @@ minimum rs
-    in
-    Option.get @@ find p0 IntSet.empty 0
 
+let find_path_with_minimal_heat_loss (map, w, h) is_ultra_crucible =
+    let (min_forward_moves, max_forward_moves) = if is_ultra_crucible then (3, 10) else (0, 3) in
 
-let find_path_1 (map, w, h) p0 =
+    let add_all visited points =
+        List.fold_left (fun acc x -> IntSet.add (idx @@ fst x) acc) visited points in
+
     let move p =
-        let (x, y, d, l) = p in
-        (*let () = printf "can move %d, %d, %s, %d\n" x y (code_str d) l in*)
-        let moves = [turn_left p; turn_right p] in
-        let moves_ = if l < 3 then
-            (straight p) :: moves
-        else
-            moves
-        in
-        let moves__ = List.filter (fun (x_, y_, _, _) -> x_ >= 0 && x_ < w && y_ >= 0 && y_ < h) moves_ in
-        (*let () = printf "valid moves: %d\n" @@ List.length moves__ in*)
-        List.map (fun p -> let (x_, y_, _, _) = p in (p, map.(y_).(x_) - 1)) moves__
+        let (x, y, d, n) = p in
+        (*let () = printf "can move %d, %d, %s, %d\n" x y (show_direction d) n in*)
+        let fwd = if n < max_forward_moves then [forward p] else [] in
+        let turns = if n > min_forward_moves then [turn_left p; turn_right p] else [] in
+        let moves = fwd @ turns in
+        (* don't consider moves which would lead out of the map *)
+        let valid_moves = List.filter (fun (x, y, _, _) -> x >= 0 && x < w && y >= 0 && y < h) moves in
+        (*let () = printf "valid moves: %d\n" @@ List.length valid_moves in*)
+        List.map (fun p -> let (x, y, _, _) = p in (p, map.(y).(x) - 1)) valid_moves
     in
 
-    let rec find frontier visited r =
-        let (can_move, cant_move) = List.partition (fun x -> (snd x) = 0) frontier in
-        let () = printf "frontier %d, visited %d, r=%d, can  move %d\n%!" (List.length frontier) (IntSet.cardinal visited) r (List.length can_move) in
-        let end_ = List.find_opt (fun ((x, y, _, _), _) -> x = w-1 && y = h-1) can_move in
-        if Option.is_some end_ then
-            r
-        else
-            let moved = List.concat @@ List.map (fun (p, _) -> move p) can_move in
-            let moved_ = List.filter (fun (p, _) -> not @@ IntSet.mem (code p) visited) moved in
-            let cant_move_ = List.map (fun (p, w) -> (p, w-1)) cant_move in
-            let l1 = List.sort_uniq (fun x y -> compare (fst x) (fst y)) moved_ in
-            let l2 = cant_move_ in (* already sorted *)
-            let frontier_ = List.merge (fun x y -> compare (fst x) (fst y)) l1 l2 in
-            let visited_ = List.fold_left (fun acc x -> IntSet.add (code (fst x)) acc) visited can_move in
-            find frontier_ visited_ (r+1)
-    in
-    find [(p0, 0)] IntSet.empty 0
-
-
-let find_path_2 (map, w, h) p0 =
-    let move p =
-        let (x, y, d, l) = p in
-        (*let () = printf "can move %d, %d, %s, %d\n" x y (code_str d) l in*)
-        let moves = if l > 3 then
-            [turn_left p; turn_right p]
-        else
-            []
-        in
-        let moves_ = if l < 10 then
-            (straight p) :: moves
-        else
-            moves
-        in
-        let moves__ = List.filter (fun (x_, y_, _, _) -> x_ >= 0 && x_ < w && y_ >= 0 && y_ < h) moves_ in
-        (*let () = printf "valid moves: %d\n" @@ List.length moves__ in*)
-        List.map (fun p -> let (x_, y_, _, _) = p in (p, map.(y_).(x_) - 1)) moves__
-    in
-
-    let rec find frontier visited r =
-        let (can_move, cant_move) = List.partition (fun x -> (snd x) = 0) frontier in
-        let () = printf "frontier %d, visited %d, r=%d, can move %d\n%!" (List.length frontier) (IntSet.cardinal visited) r (List.length can_move) in
-        let end_ = List.find_opt (fun ((x, y, _, _), _) -> x = w-1 && y = h-1) can_move in
-        if Option.is_some end_ then
-            r
-        else
-            let moved = List.concat @@ List.map (fun (p, _) -> move p) can_move in
-            let moved_ = List.filter (fun (p, _) -> not @@ IntSet.mem (code p) visited) moved in
-            let cant_move_ = List.map (fun (p, w) -> (p, w-1)) cant_move in
-            let l1 = List.sort_uniq (fun x y -> compare (fst x) (fst y)) moved_ in
-            let l2 = cant_move_ in (* already sorted *)
-            let frontier_ = List.merge (fun x y -> compare (fst x) (fst y)) l1 l2 in
-            let visited_ = List.fold_left (fun acc x -> IntSet.add (code (fst x)) acc) visited can_move in
-            let () = printf "\n" in
-            find frontier_ visited_ (r+1)
-    in
-    find [(p0, 0)] IntSet.empty 0
-
-
-let find_path (map, w, h) p0 =
-    (*
-    let move p =
-        let (x, y, d, l) = p in
-        (*let () = printf "can move %d, %d, %s, %d\n" x y (code_str d) l in*)
-        let moves = [turn_left p; turn_right p] in
-        let moves_ = if l < 3 then
-            (straight p) :: moves
-        else
-            moves
-        in
-        let moves__ = List.filter (fun (x_, y_, _, _) -> x_ >= 0 && x_ < w && y_ >= 0 && y_ < h) moves_ in
-        (*let () = printf "valid moves: %d\n" @@ List.length moves__ in*)
-        List.map (fun p -> let (x_, y_, _, _) = p in (p, map.(y_).(x_) - 1)) moves__
-    in
+    (* We'll consider expanding reachable area from starting point until we reach end point, but in order to make the
+       process easier to comprehend we'll substitute concept of heat loss with time - each block takes certain amount of
+       time to pass. So, each point in the "frontier" is coordinate (x, y, direction and amount of moves made in this
+       direction), plus time we should wait before making the next move.
     *)
-
-    let move p =
-        let (x, y, d, l) = p in
-        (*let () = printf "can move %d, %d, %s, %d\n" x y (code_str d) l in*)
-        let moves = if l > 3 then
-            [turn_left p; turn_right p]
+    let rec find frontier visited time =
+        (* separate "frontier" into points which we can move now (time to go through the current block has passed), and
+           points which we can't move yet (not enough time has passed to go through the block)
+        *)
+        let (can_move, cant_move) = List.partition (((=) 0) << snd) frontier in
+        (*let () = printf "time=%d, frontier %d, visited %d, can move %d\n%!" time (List.length frontier) (IntSet.cardinal visited) (List.length can_move) in*)
+        let end_block = List.find_opt (fun ((x, y, _, _), _) -> x = w - 1 && y = h - 1) can_move in
+        if Option.is_some end_block then
+            time
         else
-            []
-        in
-        let moves_ = if l < 10 then
-            (straight p) :: moves
-        else
-            moves
-        in
-        let moves__ = List.filter (fun (x_, y_, _, _) -> x_ >= 0 && x_ < w && y_ >= 0 && y_ < h) moves_ in
-        (*let () = printf "valid moves: %d\n" @@ List.length moves__ in*)
-        List.map (fun p -> let (x_, y_, _, _) = p in (p, map.(y_).(x_) - 1)) moves__
+            (* move points of the frontier which we can move now *)
+            let moved = List.concat @@ List.map (move << fst) can_move in
+            (* don't consider points which we already have visited, also remove duplicates *)
+            let moved_new = List.sort_uniq compare @@ List.filter (fun (p, _) -> not @@ IntSet.mem (idx p) visited) moved in
+            (* decrement remaining wait time for points which we can't move yet *)
+            let cant_move_ = List.map (fun (p, w) -> (p, w - 1)) cant_move in
+            let frontier_ = moved_new @ cant_move_ in
+            (* add all point to which we moved to visited set *)
+            let visited_ = add_all visited moved_new in
+            find frontier_ visited_ (time + 1)
     in
 
-    let rec find frontier visited r =
-        let can_move = List.of_seq @@ Seq.filter (fun x -> (snd x) = 0) @@ Hashtbl.to_seq frontier in
-        let () = printf "Frontier %d, visited %d, r=%d, can move %d\n%!" (Hashtbl.length frontier) (Hashtbl.length visited) r (List.length can_move) in
-        let end_ = List.find_opt (fun ((x, y, _, l), _) -> x = w-1 && y = h-1 && l > 3) can_move in
-        if Option.is_some end_ then
-            r
-        else
-            let () = Hashtbl.filter_map_inplace (fun _ w -> if w <= 0 then None else Option.some (w-1)) frontier in
-            let moved = List.concat @@ List.map (fun (p, _) -> move p) can_move in
-            let moved_ = List.filter (fun (p, _) -> not @@ Hashtbl.mem visited p) moved in
-            let () = List.iter (fun (p, w) ->
-                let found = Hashtbl.find_opt frontier p in
-                if Option.is_none found then
-                    Hashtbl.add frontier p w
-                else if w < Option.get found then
-                    Hashtbl.replace frontier p w
-                else
-                    ()
-            ) moved_ in
-            (*let visited_ = List.fold_left (fun acc x -> IntSet.add (code (fst x)) acc) visited can_move in*)
-            let () = List.iter (fun x -> Hashtbl.add visited (fst x) 1) can_move in
-            find frontier visited (r+1)
-    in
-    let frontier = Hashtbl.create 1000000 in
-    let () = Hashtbl.add frontier p0 0 in
-    find frontier (Hashtbl.create 1000000) 0
+    (* initial frontier consists of two points with different directions - right and down (this makes no difference in
+       the first part because we can turn immediately, but is important in the second part, where we can't turn
+       immediately )
+    *)
+    let frontier = [((0, 0, Right, 0), 0); ((0, 0, Down, 0), 0)] in
+    let visited = add_all IntSet.empty frontier in
+    find frontier visited 0
+
 
 let city = parse_city @@ read_lines @@ input_file
-let heat_loss = find_path city (0, 0, Down, 0)
-let heat_loss = find_path city (0, 0, Right, 0)
+
+let heat_loss = find_path_with_minimal_heat_loss city false
+let () = printf "%d\n" heat_loss
+
+let heat_loss = find_path_with_minimal_heat_loss city true
 let () = printf "%d\n" heat_loss

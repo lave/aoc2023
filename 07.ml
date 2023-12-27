@@ -17,7 +17,7 @@ let card_rank = function
     | 'J' -> 11
     | 'T' -> 10
     | '*' -> 0
-    | d -> Char.code d - Char.code '0'
+    | c -> int_of_char c
 
 let find_type cards =
     let unique_cards = List.sort_uniq compare cards in
